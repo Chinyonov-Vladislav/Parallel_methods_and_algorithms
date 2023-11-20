@@ -13,11 +13,12 @@ def calculate_energy(segment_signal):
 def my_zero_cross_rate(segment_signal):
     count = 0
     for index in range(0, len(segment_signal)):
-        if segment_signal[index][0] < 0 and segment_signal[index][1] == 0.0:
-            count += 1
-            continue
-        if segment_signal[index][0] * segment_signal[index][1] < 0:
-            count += 1
+        for index_in_segment in range(1, len(segment_signal[index])):
+            if segment_signal[index][index_in_segment-1] < 0 and segment_signal[index][index_in_segment] == 0.0:
+                count += 1
+                continue
+            if segment_signal[index][index_in_segment-1] * segment_signal[index][index_in_segment] < 0:
+                count += 1
     return count / len(segment_signal)
 
 
