@@ -7,10 +7,12 @@ import time
 def merge_sort(arr, output_array):
     thread_id = cuda.threadIdx.x
     block_size = cuda.blockDim.x
-    stride = len(arr) // (block_size * cuda.gridDim.x)
+    total_count_threads = block_size * cuda.gridDim.x
+    stride = len(arr) // total_count_threads
     start_index = min(thread_id * stride, len(arr))
     finish_index = min(start_index + stride, len(arr))
-    print(thread_id, start_index, finish_index)
+    if thread_id == total_count_threads - 1:
+        finish_index = len(arr)
     part_array_for_current_thread = arr[start_index:finish_index]
     sorted_part_array = True
     if len(part_array_for_current_thread) > 1:
@@ -25,16 +27,21 @@ def merge_sort(arr, output_array):
                     # Обмен элементов, если они стоят в неправильном порядке
                     arr[j], arr[j + 1] = arr[j + 1], arr[j]
     cuda.syncthreads()
+    print(thread_id, stride, start_index, finish_index)
     if thread_id % 2 == 0:
         index_global_array = thread_id * stride
-
         start_index_left = min(thread_id * stride, len(arr))
         finish_index_left = min(thread_id * stride + stride, len(arr))
         start_index_right = min(thread_id * stride + stride, len(arr))
         finish_index_right = min(thread_id * stride + 2 * stride, len(arr))
+        if total_count_threads % 2 == 0:
+            if thread_id == total_count_threads - 2:
+                finish_index_right = len(arr)
+        else:
+            if thread_id == total_count_threads - 1:
+                finish_index_right = len(arr)
         left = arr[start_index_left:finish_index_left]
         right = arr[start_index_right:finish_index_right]
-        # part_array_thread = arr[thread_id * stride: thread_id * stride + 2 * stride]
         i = j = 0
         while i < len(left) and j < len(right):
             if left[i] < right[j]:
@@ -61,8 +68,6 @@ def generateList(count_elements, min, max):
 
 
 def merge_sort_cuda(array, count_threads):
-    if len(array) % count_threads != 0:
-        count_threads += 2
     output_array = array.copy()
     while count_threads != 1:
         device_array = cuda.to_device(array)
@@ -70,10 +75,7 @@ def merge_sort_cuda(array, count_threads):
         merge_sort[1, count_threads](device_array, device_output_array)
         array = device_array.copy_to_host()
         output_array = device_output_array.copy_to_host()
-        if count_threads % 2 == 0:
-            count_threads //= 2
-        else:
-            count_threads = count_threads // 2 + 1
+        count_threads //= 2
     return output_array
 
 
@@ -141,6 +143,7 @@ def merge_sort_one_thread(arr):
     # Объединяем отсортированные половины
     return merge_one_thread(left_half, right_half)
 
+
 def merge_one_thread(left, right):
     result = []
     i = j = 0
@@ -175,7 +178,6 @@ def main():
     print(f"Исходный массив: {initial_data}")
     print(f"Отсортированный массив: {sorted_array}")
     print("Время выполнения:", end_time - start_time, "seconds")
-
     start_time = time.time()
     sorted_array_one_thread = merge_sort_one_thread(initial_data)
     end_time = time.time()
@@ -183,6 +185,7 @@ def main():
     print(f"Исходный массив: {initial_data}")
     print(f"Отсортированный массив: {sorted_array_one_thread}")
     print("Время выполнения:", end_time - start_time, "seconds")
+
 
 if __name__ == '__main__':
     main()
