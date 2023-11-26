@@ -1,0 +1,8 @@
+https://www.rabbitmq.com/tutorials/tutorial-two-dotnet.html
+https://dotnet.microsoft.com/apps/aspnet/web-apps
+http://tech.jonathangardner.net/wiki/Why_Java_Sucks
+https://github.com/ar1st0crat
+https://highlyscalable.wordpress.com/2012/02/01/mapreduce-patterns/
+https://developer.nvidia.com/blog/even-easier-introduction-cuda/
+https://github.com/Yelp/mrjob
+https://mpi4py.readthedocs.io/en/stable/overview.html
