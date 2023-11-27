@@ -69,6 +69,8 @@ def generateList(count_elements, min, max):
 
 def merge_sort_cuda(array, count_threads):
     output_array = array.copy()
+    if count_threads %2 != 0:
+        count_threads+=1
     while count_threads != 1:
         device_array = cuda.to_device(array)
         device_output_array = cuda.to_device(output_array)
