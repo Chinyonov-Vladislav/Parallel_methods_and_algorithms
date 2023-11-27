@@ -140,7 +140,8 @@ def main():
         plt.title('Original Image')
 
         plt.subplot(1, 2, 2)
-        plt.imshow(filtered_image)
+        print(filtered_image)
+        plt.imshow(filtered_image, cmap='gray')
         plt.title('Filtered Image')
         plt.show()
         file_extension = image_path.lower().split('.')[-1]
