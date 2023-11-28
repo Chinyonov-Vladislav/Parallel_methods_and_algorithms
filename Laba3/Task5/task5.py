@@ -10,70 +10,36 @@ import uuid
 
 @cuda.jit()
 def sobel_filter_kernel(original_image_array, filtered_image_array):
-    center_x, center_y = cuda.grid(2)
-    if 0 < center_x < original_image_array.shape[1] - 1 and 0 < center_y < original_image_array.shape[0] - 1:
+    center_x, center_y = cuda.grid(2) # Получение координаты текущего потока на GPU
 
+    # Проверка на нахождение внутри границ изображения
+    if 0 < center_x < original_image_array.shape[1] - 1 and 0 < center_y < original_image_array.shape[0] - 1:
         Gx = 0
         Gy = 0
 
-        pixel = original_image_array[center_y - 1, center_x - 1]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        intensity = red + green + blue
-        Gx += -intensity
-        Gy += -intensity
+        # Проход по окрестности 3x3 вокруг текущего пикселя
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                # Получение значений цветового канала для текущего пикселя
+                pixel = original_image_array[center_y + i, center_x + j]
+                r, g, b = pixel[0], pixel[1], pixel[2]
+                intensity = r + g + b
+                # Вычисление взвешенных значений градиентов в направлениях x и y
+                weight_x = j if j == 0 else 2 * j
+                weight_y = i if i == 0 else 2 * i
 
-        pixel = original_image_array[center_y, center_x - 1]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        Gx += -2 * (red + green + blue)
-
-        pixel = original_image_array[center_y + 1, center_x - 1]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        Gx += -(red + green + blue)
-        Gy += (red + green + blue)
-
-        pixel = original_image_array[center_y - 1, center_y]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        Gy += -2 * (red + green + blue)
-
-        pixel = original_image_array[center_y - 1, center_x + 1]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        Gx += (red + green + blue)
-        Gy += -(red + green + blue)
-
-        pixel = original_image_array[center_y, center_x + 1]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        Gx += 2 * (red + green + blue)
-
-        pixel = original_image_array[center_y + 1, center_x + 1]
-        red = pixel[0]
-        green = pixel[1]
-        blue = pixel[2]
-        Gx += (red + green + blue)
-        Gy += (red + green + blue)
-
+                Gx += weight_x * intensity
+                Gy += weight_y * intensity
+        # Вычисление длины вектора градиента и нормализация
         length = math.sqrt(float((Gx * Gx) + (Gy * Gy)))
         length = int(length / 4328 * 255)
-
-        filtered_image_array[center_y, center_x][0] = length
-        filtered_image_array[center_y, center_x][1] = length
-        filtered_image_array[center_y, center_x][2] = length
+        # Присвоение полученного значения отфильтрованному пикселю
+        for index in range(3):
+            filtered_image_array[center_y, center_x][index] = length
     else:
-        filtered_image_array[center_y, center_x][0] = 0
-        filtered_image_array[center_y, center_x][1] = 0
-        filtered_image_array[center_y, center_x][2] = 0
-    cuda.syncthreads()
+        # Заполнение нулями для пикселей на границах изображения
+        for index in range(3):
+            filtered_image_array[center_y, center_x][index] = 0
 
 
 def sobel_filter_cuda(original_image_array):
